@@ -50,19 +50,13 @@ jobs:
       MYTHTV_CONFIG_EXTRA:
       CCACHE_DIR: $HOME/.ccache
       CCACHE_COMPRESS: true
-      CCACHE_MAXSIZE: 1200M
+      CCACHE_MAXSIZE: 900M
       DEBIAN_FRONTEND: noninteractive
 
     strategy:
       matrix:
         container:
           # Ubuntu group
-          - desc: 'Ubuntu 22.04 LTS (Jammy Jellyfish)'
-            image: 'ubuntu:22.04'
-            ansibleopts: '--limit localhost'
-            configurecmd: './configure'
-            configureopts: ''
-            makecmd: 'make -j4'
           - desc: 'Ubuntu 23.10 (Mantic Minotaur)'
             image: 'ubuntu:23.10'
             ansibleopts: '--limit localhost'
@@ -85,12 +79,6 @@ jobs:
             makecmd: 'make -j4'
 
           # Fedora group
-          - desc: 'Fedora 38'
-            image: 'quay.io/fedora/fedora:38'
-            ansibleopts: '--limit localhost'
-            configurecmd: './configure'
-            configureopts: ''
-            makecmd: 'make -j4'
           - desc: 'Fedora 39'
             image: 'quay.io/fedora/fedora:39'
             ansibleopts: '--limit localhost'
@@ -148,7 +136,7 @@ jobs:
         run: dnf install ansible dnf-plugins-core -y
         if: env.OS_RELEASE_ID == 'fedora' || env.OS_RELEASE_ID == 'centos' || env.OS_RELEASE_ID == 'rocky'
 
-      - name: Checkout repository
+      - name: Checkout MythTV/ansible repository
         uses: actions/checkout@v4
         with:
           repository: MythTV/ansible
