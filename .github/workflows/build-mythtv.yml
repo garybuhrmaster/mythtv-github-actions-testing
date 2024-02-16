@@ -212,6 +212,7 @@ jobs:
   build-mythtv-macos:
     name: Building MythTV on ${{ matrix.os.desc }} using ${{ matrix.compiler.desc }}
 
+    strategy:
       matrix:
         os:
           - desc: 'macOS 14 (Sonoma) arm64'
