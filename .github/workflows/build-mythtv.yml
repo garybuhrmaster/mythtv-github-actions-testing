@@ -153,11 +153,11 @@ jobs:
 
       - name: Debian/Ubuntu add in extra packages for additional coverage
         run: apt install ${{ matrix.container.extrapkgs }} -y
-        if: (env.OS_RELEASE_ID == 'debian' || env.OS_RELEASE_ID == 'ubuntu') && (${{ matrix.container.extrapkgs }} != '')
+        if: ${{ (env.OS_RELEASE_ID == 'debian' || env.OS_RELEASE_ID == 'ubuntu') && ( matrix.container.extrapkgs != '') }}
 
       - name: Redhat/Fedora add in extra packages for additional coverage
         run: dnf install ${{ matrix.container.extrapkgs }} -y
-        if: (env.OS_RELEASE_ID == 'fedora' || env.OS_RELEASE_ID == 'centos' || env.OS_RELEASE_ID == 'rocky') && (${{ matrix.container.extrapkgs }} != '')
+        if: ${{ (env.OS_RELEASE_ID == 'fedora' || env.OS_RELEASE_ID == 'centos' || env.OS_RELEASE_ID == 'rocky') && ( matrix.container.extrapkgs != '') }}
 
       ####
       #### This would be a local checkout if/when this moves to the MythTV repo
