@@ -222,17 +222,17 @@ jobs:
             ansibleopts: '--limit localhost'
             extrapkgs: ''
             configurecmd: './configure'
-            configureopts: ''
-            makecmd: 'make -j4'
+            configureopts: '--extra_ldflags="-Wl,-ld_classic"'
+            makecmd: 'make -j3'
           - desc: 'macOS 14 (Sonoma) x86_64'
             runner: 'macos-14'
-            pkgmgr: 'arch x86_64 brew'
-            ansiblecmd: 'arch x86_64 ansible-playbook'
+            pkgmgr: 'arch -x86_64 brew'
+            ansiblecmd: 'arch -x86_64 ansible-playbook'
             ansibleopts: '--limit localhost'
             extrapkgs: ''
-            configurecmd: 'arch x86_64 ./configure'
-            configureopts: ''
-            makecmd: 'arch x86_64 make -j4'
+            configurecmd: 'arch -x86_64 ./configure'
+            configureopts: '--extra_ldflags="-Wl,-ld_classic"'
+            makecmd: 'arch -x86_64 make -j3'
 
         compiler:
           - desc: 'gcc'
@@ -270,3 +270,53 @@ jobs:
       - name: Run ansible to install build requirements
         working-directory: ansible
         run: ${{ matrix.os.ansiblecmd }} ${{ matrix.os.ansibleopts }} mythtv.yml
+
+      ####
+      #### This would be a local checkout if/when this moves to the MythTV repo
+      ####
+      - name: Checkout Mythtv/mythtv repository
+        uses: actions/checkout@v4
+        with:
+          repository: MythTV/mythtv
+          path: mythtv
+
+      - name: Checkout ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ${{ matrix.os.desc }}-${{ matrix.compiler.desc }}-build-core-ccache-${{ github.sha }}
+          restore-keys: ${{ matrix.os.desc }}-${{ matrix.compiler.desc }}-build-core-ccache
+
+      - name: ccache statistics [pre]
+        run: ccache -s
+
+      - name: Configure core
+        working-directory: mythtv/mythtv
+        run: ${{ matrix.os.configurecmd }} --prefix=${{ env.MYTHTV_CONFIG_PREFIX }} ${{ env.MYTHTV_CONFIG_EXTRA }} ${{ matrix.os.configureopts }}
+
+      - name: Make core
+        working-directory: mythtv/mythtv
+        run: ${{ matrix.os.makecmd }} all_no_test
+
+      - name: Install core
+        working-directory: mythtv/mythtv
+        run: ${{ matrix.os.makecmd }} install
+
+      - name: Test core
+        working-directory: mythtv/mythtv
+        run: ${{ matrix.os.makecmd }} tests
+
+      - name: Configure plugins
+        working-directory: mythtv/mythplugins
+        run: ${{ matrix.os.configurecmd }} --prefix=${{ env.MYTHTV_CONFIG_PREFIX }}
+
+      - name: Make plugins
+        working-directory: mythtv/mythplugins
+        run: ${{ matrix.os.makecmd }}
+
+      - name: Install plugins
+        working-directory: mythtv/mythplugins
+        run: ${{ matrix.os.makecmd }} install
+
+      - name: ccache statistics [post]
+        run: ccache -s
