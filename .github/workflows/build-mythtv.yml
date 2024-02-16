@@ -208,3 +208,64 @@ jobs:
 
       - name: ccache statistics [post]
         run: ccache -s
+
+  build-mythtv-macos:
+    name: Building MythTV on ${{ matrix.os.desc }} using ${{ matrix.compiler.desc }}
+
+      matrix:
+        os:
+          - desc: 'macOS 14 (Sonoma) arm64'
+            runner: 'macos-14'
+            pkgmgr: 'brew'
+            ansiblecmd: 'ansible-playbook'
+            ansibleopts: '--limit localhost'
+            extrapkgs: ''
+            configurecmd: './configure'
+            configureopts: ''
+            makecmd: 'make -j4'
+          - desc: 'macOS 14 (Sonoma) x86_64'
+            runner: 'macos-14'
+            pkgmgr: 'arch x86_64 brew'
+            ansiblecmd: 'arch x86_64 ansible-playbook'
+            ansibleopts: '--limit localhost'
+            extrapkgs: ''
+            configurecmd: 'arch x86_64 ./configure'
+            configureopts: ''
+            makecmd: 'arch x86_64 make -j4'
+
+        compiler:
+          - desc: 'gcc'
+            cc: 'gcc'
+            cxx: 'g++'
+          - desc: 'clang'
+            cc: 'clang'
+            cxx: 'clang++'
+
+      fail-fast: false
+
+    runs-on: ${{ matrix.os.runner }}
+
+    env:
+      TZ: Etc/UTC
+      MYTHTV_CONFIG_PREFIX: ${{ github.workspace }}/build/install
+      MYTHTV_CONFIG_EXTRA:
+      CCACHE_DIR: $HOME/.ccache
+      CCACHE_COMPRESS: true
+      CCACHE_MAXSIZE: 900M
+
+    steps:
+      - name: Update Homebrew
+        run: ${{ matrix.os.pkgmgr }} update
+
+      - name: Install ansible
+        run: ${{ matrix.os.pkgmgr }} install ansible
+
+      - name: Checkout MythTV/ansible repository
+        uses: actions/checkout@v4
+        with:
+          repository: MythTV/ansible
+          path: ansible
+
+      - name: Run ansible to install build requirements
+        working-directory: ansible
+        run: ${{ matrix.os.ansiblecmd }} ${{ matrix.os.ansibleopts }} mythtv.yml
