@@ -1,0 +1,209 @@
+---
+name: Build MythTV core variants
+
+#
+# This workflow is intended to provide good coverage
+# quickly to insure that the build "basically" works.
+#
+# The containers are selected to be a subset from the
+# set of linux distributions and versions that are
+# currently among the list (or will soon be for beta/rc)
+# of the MythTV project lists of supported variants
+# (which are Ubuntu LTS and current, Debian stable, and
+# Fedora current and current-1.
+#
+# Due to the github global limit of 10GB for caches, we
+# need to subset the number of variants we build for
+# in order to take advantage of the speedup provided
+# by ccache.
+#
+# If the github cache (used for the compiler ccache)
+# has not been flushed, this job should run in about
+# 10 minutes.  If it has been flushed it may take
+# around an hour to run.
+#
+
+on:                # yamllint disable-line rule:truthy
+
+  push:
+    branches:
+      - 'master'
+
+  pull_request:
+    branches:
+      - 'master'
+
+    workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-mythtv-linux:
+    name: Building MythTV on ${{ matrix.container.desc }} using ${{ matrix.compiler.desc }}
+
+    runs-on: ubuntu-latest
+
+    env:
+      TZ: Etc/UTC
+      MYTHTV_CONFIG_PREFIX: ${{ github.workspace }}/build/install
+      MYTHTV_CONFIG_EXTRA:
+      CCACHE_DIR: $HOME/.ccache
+      CCACHE_COMPRESS: true
+      CCACHE_MAXSIZE: 1200M
+      DEBIAN_FRONTEND: noninteractive
+
+    strategy:
+      matrix:
+        container:
+          # Ubuntu group
+          - desc: 'Ubuntu 22.04 LTS (Jammy Jellyfish)'
+            image: 'ubuntu:22.04'
+            ansibleopts: '--limit localhost'
+            configurecmd: './configure'
+            configureopts: ''
+            makecmd: 'make -j4'
+          - desc: 'Ubuntu 23.10 (Mantic Minotaur)'
+            image: 'ubuntu:23.10'
+            ansibleopts: '--limit localhost'
+            configurecmd: './configure'
+            configureopts: ''
+            makecmd: 'make -j4'
+          - desc: 'Ubuntu 24.04 LTS (Noble Numbat)'
+            image: 'ubuntu:24.04'
+            ansibleopts: '--limit localhost'
+            configurecmd: './configure'
+            configureopts: ''
+            makecmd: 'make -j4'
+
+          # Debian group
+          - desc: 'Debian 12 (Bookworm)'
+            image: 'debian:bookworm'
+            ansibleopts: '--limit localhost'
+            configurecmd: './configure'
+            configureopts: ''
+            makecmd: 'make -j4'
+
+          # Fedora group
+          - desc: 'Fedora 38'
+            image: 'quay.io/fedora/fedora:38'
+            ansibleopts: '--limit localhost'
+            configurecmd: './configure'
+            configureopts: ''
+            makecmd: 'make -j4'
+          - desc: 'Fedora 39'
+            image: 'quay.io/fedora/fedora:39'
+            ansibleopts: '--limit localhost'
+            configurecmd: './configure'
+            configureopts: ''
+            makecmd: 'make -j4'
+          - desc: 'Fedora 39 with Qt6'
+            image: 'quay.io/fedora/fedora:39'
+            ansibleopts: '--limit localhost -e "qt6=true"'
+            configurecmd: './configure'
+            configureopts: '--qmake=qmake6'
+            makecmd: 'make -j4'
+
+        compiler:
+          - desc: 'gcc'
+            cc: 'gcc'
+            cxx: 'g++'
+          - desc: 'clang'
+            cc: 'clang'
+            cxx: 'clang++'
+
+      fail-fast: false
+
+    container:
+      image: ${{ matrix.container.image }}
+
+    steps:
+      - name: Detect OS release
+        run: |
+          . /etc/os-release
+          echo "OS_RELEASE_ID=$ID" >> $GITHUB_ENV
+          echo "OS_RELEASE_VERSION=$VERSION_ID" >> $GITHUB_ENV
+          echo "OS_RELEASE_VERSION_MAJOR=${VERSION_ID%%.*}" >> $GITHUB_ENV
+          echo "OS_RELEASE_VERSION_CODENAME=$VERSION_CODENAME" >> $GITHUB_ENV
+
+      - name: Debian OS obtain codename for prerelease vesions
+        run: echo "OS_RELEASE_VERSION_CODENAME=`dpkg --status tzdata | grep 'Provides' | cut -f2 -d'-'`" >> $GITHUB_ENV
+        if: env.OS_RELEASE_ID == 'debian' && env.OS_RELEASE_VERSION_CODENAME == ''
+
+      - name: Debian/Ubuntu OS update
+        run: |
+          apt update -y
+          apt upgrade -y
+        if: env.OS_RELEASE_ID == 'debian' || env.OS_RELEASE_ID == 'ubuntu'
+
+      - name: Debian/Ubuntu OS install ansible
+        run: apt install ansible apt-utils -y
+        if: env.OS_RELEASE_ID == 'debian' || env.OS_RELEASE_ID == 'ubuntu'
+
+      - name: Redhat/Fedora OS update
+        run: dnf upgrade -y
+        if: env.OS_RELEASE_ID == 'fedora' || env.OS_RELEASE_ID == 'centos' || env.OS_RELEASE_ID == 'rocky'
+
+      - name: Redhat/Fedora OS install ansible
+        run: dnf install ansible dnf-plugins-core -y
+        if: env.OS_RELEASE_ID == 'fedora' || env.OS_RELEASE_ID == 'centos' || env.OS_RELEASE_ID == 'rocky'
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: MythTV/ansible
+          path: ansible
+
+      - name: Run ansible to install build requirements
+        working-directory: ansible
+        run: ansible-playbook ${{ matrix.container.ansibleopts }} mythtv.yml
+
+      ####
+      #### This would be a local checkout if/when this moves to the MythTV repo
+      ####
+      - name: Checkout Mythtv/mythtv repository
+        uses: actions/checkout@v4
+        with:
+          repository: MythTV/mythtv
+          path: mythtv
+
+      - name: Checkout ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ${{ matrix.container.desc }}-${{ matrix.compiler.desc }}-build-core-ccache-${{ github.sha }}
+          restore-keys: ${{ matrix.container.desc }}-${{ matrix.compiler.desc }}-build-core-ccache
+
+      - name: ccache statistics [pre]
+        run: ccache -s
+
+      - name: Configure core
+        working-directory: mythtv/mythtv
+        run: ${{ matrix.container.configurecmd }} --prefix=${{ env.MYTHTV_CONFIG_PREFIX }} ${{ env.MYTHTV_CONFIG_EXTRA }} ${{ matrix.container.configureopts }} 
+
+      - name: Make core
+        working-directory: mythtv/mythtv
+        run: ${{ matrix.container.makecmd }} all_no_test 
+
+      - name: Install core
+        working-directory: mythtv/mythtv
+        run: ${{ matrix.container.makecmd }} install
+
+      - name: Test core
+        working-directory: mythtv/mythtv
+        run: ${{ matrix.container.makecmd }} tests
+
+      - name: Configure plugins
+        working-directory: mythtv/mythplugins
+        run: ${{ matrix.container.configurecmd }} --prefix=${{ env.MYTHTV_CONFIG_PREFIX }}
+
+      - name: Make plugins
+        working-directory: mythtv/mythplugins
+        run: ${{ matrix.container.makecmd }}
+
+      - name: Install plugins
+        working-directory: mythtv/mythplugins
+        run: ${{ matrix.container.makecmd }} install
+
+      - name: ccache statistics [post]
+        run: ccache -s
