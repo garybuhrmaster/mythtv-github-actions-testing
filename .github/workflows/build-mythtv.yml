@@ -60,12 +60,14 @@ jobs:
           - desc: 'Ubuntu 23.10 (Mantic Minotaur)'
             image: 'ubuntu:23.10'
             ansibleopts: '--limit localhost'
+            extrapkgs: 'ant'
             configurecmd: './configure'
             configureopts: '--enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
             makecmd: 'make -j4'
           - desc: 'Ubuntu 24.04 LTS (Noble Numbat)'
             image: 'ubuntu:24.04'
             ansibleopts: '--limit localhost'
+            extrapkgs: 'ant'
             configurecmd: './configure'
             configureopts: '--enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
             makecmd: 'make -j4'
@@ -74,6 +76,7 @@ jobs:
           - desc: 'Debian 12 (Bookworm)'
             image: 'debian:bookworm'
             ansibleopts: '--limit localhost'
+            extrapkgs: 'ant'
             configurecmd: './configure'
             configureopts: '--enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
             makecmd: 'make -j4'
@@ -82,12 +85,14 @@ jobs:
           - desc: 'Fedora 39'
             image: 'quay.io/fedora/fedora:39'
             ansibleopts: '--limit localhost'
+            extrapkgs: 'ant'
             configurecmd: './configure'
             configureopts: '--enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
             makecmd: 'make -j4'
           - desc: 'Fedora 39 with Qt6'
             image: 'quay.io/fedora/fedora:39'
             ansibleopts: '--limit localhost -e "qt6=true"'
+            extrapkgs: 'ant'
             configurecmd: './configure'
             configureopts: '--qmake=qmake6 --enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
             makecmd: 'make -j4'
@@ -145,6 +150,14 @@ jobs:
       - name: Run ansible to install build requirements
         working-directory: ansible
         run: ansible-playbook ${{ matrix.container.ansibleopts }} mythtv.yml
+
+      - name: Debian/Ubuntu add in extra packages for additional coverage
+        run: apt install ${{ matrix.container.extrapkgs }} -y
+        if: (env.OS_RELEASE_ID == 'debian' || env.OS_RELEASE_ID == 'ubuntu') && (${{ matrix.container.extrapkgs }} != '')
+
+      - name: Redhat/Fedora add in extra packages for additional coverage
+        run: dnf install ${{ matrix.container.extrapkgs }} -y
+        if: (env.OS_RELEASE_ID == 'fedora' || env.OS_RELEASE_ID == 'centos' || env.OS_RELEASE_ID == 'rocky') && (${{ matrix.container.extrapkgs }} != '')
 
       ####
       #### This would be a local checkout if/when this moves to the MythTV repo
