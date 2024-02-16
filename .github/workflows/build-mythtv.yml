@@ -61,13 +61,13 @@ jobs:
             image: 'ubuntu:23.10'
             ansibleopts: '--limit localhost'
             configurecmd: './configure'
-            configureopts: ''
+            configureopts: '--enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
             makecmd: 'make -j4'
           - desc: 'Ubuntu 24.04 LTS (Noble Numbat)'
             image: 'ubuntu:24.04'
             ansibleopts: '--limit localhost'
             configurecmd: './configure'
-            configureopts: ''
+            configureopts: '--enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
             makecmd: 'make -j4'
 
           # Debian group
@@ -75,7 +75,7 @@ jobs:
             image: 'debian:bookworm'
             ansibleopts: '--limit localhost'
             configurecmd: './configure'
-            configureopts: ''
+            configureopts: '--enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
             makecmd: 'make -j4'
 
           # Fedora group
@@ -83,13 +83,13 @@ jobs:
             image: 'quay.io/fedora/fedora:39'
             ansibleopts: '--limit localhost'
             configurecmd: './configure'
-            configureopts: ''
+            configureopts: '--enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
             makecmd: 'make -j4'
           - desc: 'Fedora 39 with Qt6'
             image: 'quay.io/fedora/fedora:39'
             ansibleopts: '--limit localhost -e "qt6=true"'
             configurecmd: './configure'
-            configureopts: '--qmake=qmake6'
+            configureopts: '--qmake=qmake6 --enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
             makecmd: 'make -j4'
 
         compiler:
