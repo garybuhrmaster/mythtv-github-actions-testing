@@ -180,11 +180,11 @@ jobs:
 
       - name: Configure core
         working-directory: mythtv/mythtv
-        run: ${{ matrix.container.configurecmd }} --prefix=${{ env.MYTHTV_CONFIG_PREFIX }} ${{ env.MYTHTV_CONFIG_EXTRA }} ${{ matrix.container.configureopts }} 
+        run: ${{ matrix.container.configurecmd }} --prefix=${{ env.MYTHTV_CONFIG_PREFIX }} ${{ env.MYTHTV_CONFIG_EXTRA }} ${{ matrix.container.configureopts }}
 
       - name: Make core
         working-directory: mythtv/mythtv
-        run: ${{ matrix.container.makecmd }} all_no_test 
+        run: ${{ matrix.container.makecmd }} all_no_test
 
       - name: Install core
         working-directory: mythtv/mythtv
