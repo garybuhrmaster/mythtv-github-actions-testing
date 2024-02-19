@@ -40,7 +40,7 @@ permissions:
 
 jobs:
   build-mythtv-linux:
-    name: Building MythTV on ${{ matrix.container.desc }} using ${{ matrix.compiler.desc }}
+    name: Building MythTV on ${{ matrix.container.desc }}
 
     runs-on: ubuntu-latest
 
@@ -52,58 +52,49 @@ jobs:
       CCACHE_COMPRESS: true
       CCACHE_MAXSIZE: 900M
       DEBIAN_FRONTEND: noninteractive
+      CONFIGURE_CMD: "./configure"
+      MAKE_CMD: 'make -j4'
 
     strategy:
       matrix:
         container:
           # Ubuntu group
-          - desc: 'Ubuntu 23.10 (Mantic Minotaur)'
-            image: 'ubuntu:23.10'
+          - desc: 'Ubuntu interim'
+            image: 'ubuntu:rolling'
             ansibleopts: '--limit localhost'
             extrapkgs: 'ant default-jdk-headless'
-            configurecmd: './configure'
             configureopts: '--enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
-            makecmd: 'make -j4'
-          - desc: 'Ubuntu 24.04 LTS (Noble Numbat)'
-            image: 'ubuntu:24.04'
+          - desc: 'Ubuntu LTS'
+            image: 'ubuntu:latest'
             ansibleopts: '--limit localhost'
             extrapkgs: 'ant default-jdk-headless'
-            configurecmd: './configure'
             configureopts: '--enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
-            makecmd: 'make -j4'
 
           # Debian group
-          - desc: 'Debian 12 (Bookworm)'
-            image: 'debian:bookworm'
+          - desc: 'Debian stable'
+            image: 'debian:stable'
             ansibleopts: '--limit localhost'
             extrapkgs: 'ant default-jdk-headless'
-            configurecmd: './configure'
             configureopts: '--enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
-            makecmd: 'make -j4'
 
           # Fedora group
-          - desc: 'Fedora 39'
-            image: 'quay.io/fedora/fedora:39'
+          - desc: 'Fedora latest'
+            image: 'quay.io/fedora/fedora:latest'
             ansibleopts: '--limit localhost'
             extrapkgs: 'ant'
-            configurecmd: './configure'
             configureopts: '--enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
-            makecmd: 'make -j4'
-          - desc: 'Fedora 39 with Qt6'
-            image: 'quay.io/fedora/fedora:39'
+
+          # Qt6 and clang alternative(s) group
+          - desc: 'Fedora latest with Qt6'
+            image: 'quay.io/fedora/fedora:latest'
             ansibleopts: '--limit localhost -e "qt6=true"'
             extrapkgs: 'ant'
-            configurecmd: './configure'
             configureopts: '--qmake=qmake6 --enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
-            makecmd: 'make -j4'
-
-        compiler:
-          - desc: 'gcc'
-            cc: 'gcc'
-            cxx: 'g++'
-          - desc: 'clang'
-            cc: 'clang'
-            cxx: 'clang++'
+          - desc: 'Fedora latest using clang'
+            image: 'quay.io/fedora/fedora:latest'
+            ansibleopts: '--limit localhost'
+            extrapkgs: 'ant clang'
+            configureopts: '--qmake=qmake6 --cc=clang --cxx=clang++ --enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
 
       fail-fast: false
 
@@ -172,39 +163,39 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.ccache
-          key: ${{ matrix.container.desc }}-${{ matrix.compiler.desc }}-build-core-ccache-${{ github.sha }}
-          restore-keys: ${{ matrix.container.desc }}-${{ matrix.compiler.desc }}-build-core-ccache
+          key: ${{ matrix.container.desc }}-build-core-ccache-${{ github.sha }}
+          restore-keys: ${{ matrix.container.desc }}-build-core-ccache
 
       - name: ccache statistics [pre]
         run: ccache -s
 
       - name: Configure core
         working-directory: mythtv/mythtv
-        run: ${{ matrix.container.configurecmd }} --prefix=${{ env.MYTHTV_CONFIG_PREFIX }} ${{ env.MYTHTV_CONFIG_EXTRA }} ${{ matrix.container.configureopts }}
+        run: ${CONFIGURE_CMD} --prefix=${{ env.MYTHTV_CONFIG_PREFIX }} ${{ env.MYTHTV_CONFIG_EXTRA }} ${{ matrix.container.configureopts }}
 
       - name: Make core
         working-directory: mythtv/mythtv
-        run: ${{ matrix.container.makecmd }} all_no_test
+        run: ${MAKE_CMD} all_no_test
 
       - name: Install core
         working-directory: mythtv/mythtv
-        run: ${{ matrix.container.makecmd }} install
+        run: ${MAKE_CMD} install
 
       - name: Test core
         working-directory: mythtv/mythtv
-        run: ${{ matrix.container.makecmd }} tests
+        run: ${MAKE_CMD} tests
 
       - name: Configure plugins
         working-directory: mythtv/mythplugins
-        run: ${{ matrix.container.configurecmd }} --prefix=${{ env.MYTHTV_CONFIG_PREFIX }}
+        run: ${CONFIGURE_CMD} --prefix=${{ env.MYTHTV_CONFIG_PREFIX }}
 
       - name: Make plugins
         working-directory: mythtv/mythplugins
-        run: ${{ matrix.container.makecmd }}
+        run: ${MAKE_CMD}
 
       - name: Install plugins
         working-directory: mythtv/mythplugins
-        run: ${{ matrix.container.makecmd }} install
+        run: ${MAKE_CMD} install
 
       - name: ccache statistics [post]
         run: ccache -s
