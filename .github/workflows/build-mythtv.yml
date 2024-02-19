@@ -78,19 +78,19 @@ jobs:
             configureopts: '--enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
 
           # Fedora group
-          - desc: 'Fedora latest'
+          - desc: 'Fedora'
             image: 'quay.io/fedora/fedora:latest'
             ansibleopts: '--limit localhost'
             extrapkgs: 'ant'
             configureopts: '--enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
 
           # Qt6 and clang alternative(s) group
-          - desc: 'Fedora latest with Qt6'
+          - desc: 'Fedora - Qt6'
             image: 'quay.io/fedora/fedora:latest'
             ansibleopts: '--limit localhost -e "qt6=true"'
             extrapkgs: 'ant'
             configureopts: '--qmake=qmake6 --enable-libmp3lame --enable-libvpx --enable-libx264 --enable-libx265 --enable-bdjava --enable-vulkan'
-          - desc: 'Fedora latest using clang'
+          - desc: 'Fedora - clang'
             image: 'quay.io/fedora/fedora:latest'
             ansibleopts: '--limit localhost'
             extrapkgs: 'ant clang'
