@@ -17,6 +17,16 @@ name: Build MythTV core variants
 # in order to take advantage of the speedup provided
 # by ccache.
 #
+# Even though we will not use the ccache until later in the
+# workflow, due to github's LRU eviction strategy when we
+# are near the github cache size limit we want to retrieve
+# the cache early before any real work starts for all jobs
+# so that the oldest caches are evicted in the order one
+# wants.  This is a subtle artifact, but was seen with a
+# specific case where the cache was under high usage and
+# the steps for cache retrieval did not occur until much
+# later for some jobs.
+#
 # If the github cache (used for the compiler ccache)
 # has not been flushed, this job should run in about
 # 10 minutes.  If it has been flushed it may take
@@ -102,6 +112,16 @@ jobs:
       image: ${{ matrix.container.image }}
 
     steps:
+      - name: Checkout ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ${{ matrix.container.desc }}-build-core-ccache-${{ github.sha }}
+          restore-keys: ${{ matrix.container.desc }}-build-core-ccache
+
+      - name: ccache statistics [pre]
+        run: ccache -s
+
       - name: Detect OS release
         run: |
           . /etc/os-release
@@ -158,16 +178,6 @@ jobs:
         with:
           repository: MythTV/mythtv
           path: mythtv
-
-      - name: Checkout ccache
-        uses: actions/cache@v4
-        with:
-          path: ~/.ccache
-          key: ${{ matrix.container.desc }}-build-core-ccache-${{ github.sha }}
-          restore-keys: ${{ matrix.container.desc }}-build-core-ccache
-
-      - name: ccache statistics [pre]
-        run: ccache -s
 
       - name: Configure core
         working-directory: mythtv/mythtv
@@ -270,6 +280,16 @@ jobs:
       ANSIBLE_EXTRA: ''
 
     steps:
+      - name: Checkout ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ${{ matrix.os.desc }}-${{ matrix.compiler.desc }}-build-core-ccache-${{ github.sha }}
+          restore-keys: ${{ matrix.os.desc }}-${{ matrix.compiler.desc }}-build-core-ccache
+
+      - name: ccache statistics [pre]
+        run: ccache -s
+
       - name: Bootstrap Macports
         env:
           GH_URL: "https://raw.githubusercontent.com"
@@ -346,6 +366,7 @@ jobs:
           PYTHON_VENV_PATH="$HOME/.mythtv/python-virtualenv"
           source "${PYTHON_VENV_PATH}/bin/activate"
           echo "PYTHON_CMD=${PYTHON_VENV_PATH}/bin/python3" >> $GITHUB_ENV
+
       ####
       #### This would be a local checkout if/when this moves to the MythTV repo
       ####
@@ -354,16 +375,6 @@ jobs:
         with:
           repository: MythTV/mythtv
           path: mythtv
-
-      - name: Checkout ccache
-        uses: actions/cache@v4
-        with:
-          path: ~/.ccache
-          key: ${{ matrix.os.desc }}-${{ matrix.compiler.desc }}-build-core-ccache-${{ github.sha }}
-          restore-keys: ${{ matrix.os.desc }}-${{ matrix.compiler.desc }}-build-core-ccache
-
-      - name: ccache statistics [pre]
-        run: ccache -s
 
       - name: Configure core
         working-directory: mythtv/mythtv
