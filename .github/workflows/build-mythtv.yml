@@ -393,11 +393,11 @@ jobs:
       #
       - name: Install external libs
         working-directory: mythtv/mythtv
-        run: ${MAKE_CMD} install external
+        run: ${MAKE_CMD} -C external install
 
       - name: Install libs
         working-directory: mythtv/mythtv
-        run: ${MAKE_CMD} install libs
+        run: ${MAKE_CMD} -C libs install
 
       - name: Install core
         working-directory: mythtv/mythtv
