@@ -384,6 +384,21 @@ jobs:
         working-directory: mythtv/mythtv
         run: ${MAKE_CMD} all_no_test
 
+      #
+      # Make install external & libs are a
+      # workaround for a dependency error
+      # in the Makefiles, as the macOS
+      # linker needs the libraries for
+      # further linking of the programs
+      #
+      - name: Install external libs
+        working-directory: mythtv/mythtv
+        run: ${MAKE_CMD} install external
+
+      - name: Install libs
+        working-directory: mythtv/mythtv
+        run: ${MAKE_CMD} install libs
+
       - name: Install core
         working-directory: mythtv/mythtv
         run: ${MAKE_CMD} install
