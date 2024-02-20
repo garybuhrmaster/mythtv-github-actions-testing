@@ -119,9 +119,6 @@ jobs:
           key: ${{ matrix.container.desc }}-build-core-ccache-${{ github.sha }}
           restore-keys: ${{ matrix.container.desc }}-build-core-ccache
 
-      - name: ccache statistics [pre]
-        run: ccache -s
-
       - name: Detect OS release
         run: |
           . /etc/os-release
@@ -178,6 +175,9 @@ jobs:
         with:
           repository: MythTV/mythtv
           path: mythtv
+
+      - name: ccache statistics [pre]
+        run: ccache -s
 
       - name: Configure core
         working-directory: mythtv/mythtv
@@ -287,9 +287,6 @@ jobs:
           key: ${{ matrix.os.desc }}-${{ matrix.compiler.desc }}-build-core-ccache-${{ github.sha }}
           restore-keys: ${{ matrix.os.desc }}-${{ matrix.compiler.desc }}-build-core-ccache
 
-      - name: ccache statistics [pre]
-        run: ccache -s
-
       - name: Bootstrap Macports
         env:
           GH_URL: "https://raw.githubusercontent.com"
@@ -375,6 +372,9 @@ jobs:
         with:
           repository: MythTV/mythtv
           path: mythtv
+
+      - name: ccache statistics [pre]
+        run: ccache -s
 
       - name: Configure core
         working-directory: mythtv/mythtv
