@@ -405,7 +405,7 @@ jobs:
 
       - name: Test core
         working-directory: mythtv/mythtv
-        run: ${MAKE_CMD} tests
+        run: ${MAKE_CMD} -j1 tests
 
       - name: Configure plugins
         working-directory: mythtv/mythplugins
@@ -417,7 +417,7 @@ jobs:
 
       - name: Install plugins
         working-directory: mythtv/mythplugins
-        run: ${MAKE_CMD} install
+        run: ${MAKE_CMD} -j1 install
 
       - name: ccache statistics [post]
         run: ccache -s
