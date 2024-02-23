@@ -391,17 +391,17 @@ jobs:
       # linker needs the libraries for
       # further linking of the programs
       #
-      - name: Install external libs
-        working-directory: mythtv/mythtv
-        run: ${MAKE_CMD} -C external install
-
-      - name: Install libs
-        working-directory: mythtv/mythtv
-        run: ${MAKE_CMD} -C libs install
+      # name: Install external libs
+      # working-directory: mythtv/mythtv
+      # run: ${MAKE_CMD} -C external install
+      #
+      # name: Install libs
+      # working-directory: mythtv/mythtv
+      # run: ${MAKE_CMD} -C libs install
 
       - name: Install core
         working-directory: mythtv/mythtv
-        run: ${MAKE_CMD} install
+        run: ${MAKE_CMD} -j1 install
 
       - name: Test core
         working-directory: mythtv/mythtv
