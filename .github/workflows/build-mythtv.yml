@@ -200,7 +200,7 @@ jobs:
 
       - name: Configure plugins
         working-directory: mythtv/mythplugins
-        run: ${CONFIGURE_CMD} --prefix=${{ env.MYTHTV_CONFIG_PREFIX }}
+        run: ./configure --prefix=${{ env.MYTHTV_CONFIG_PREFIX }}
 
       - name: Make plugins
         working-directory: mythtv/mythplugins
