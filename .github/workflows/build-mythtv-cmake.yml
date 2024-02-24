@@ -1,0 +1,110 @@
+---
+name: Build MythTV core variants using cmake
+
+#
+# This workflow is intended to provide good coverage
+# quickly to insure that the build "basically" works.
+#
+# The containers are selected to be a subset from the
+# set of linux distributions and versions that are
+# currently among the list (or will soon be for beta/rc)
+# of the MythTV project lists of supported variants
+# (which are Ubuntu LTS and current, Debian stable, and
+# Fedora current and current-1.
+#
+
+on:                # yamllint disable-line rule:truthy
+
+  push:
+    branches:
+      - 'master'
+
+  pull_request:
+    branches:
+      - 'master'
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-mythtv-linux-cmake:
+    name: Building MythTV on ${{ matrix.container.desc }} using cmake
+
+    runs-on: ubuntu-latest
+
+    env:
+      TZ: Etc/UTC
+      MYTHTV_CONFIG_PREFIX: ${{ github.workspace }}/build/install
+      CCACHE_DIR: $HOME/.ccache
+      CCACHE_COMPRESS: true
+      CCACHE_MAXSIZE: 900M
+      DEBIAN_FRONTEND: noninteractive
+
+    strategy:
+      matrix:
+        container:
+          # Fedora group
+          - desc: 'Fedora - cmake'
+            image: 'quay.io/fedora/fedora:latest'
+            update_cmd: 'dnf upgrade -y'
+            install_ansible_cmd: 'dnf install ansible dnf-plugins-core -y'
+            ansible_cmd: 'ansible-playbook --limit localhost mythtv.yml'
+            install_extra_pkgs_cmd: 'dnf install ant -y'
+            cmake_opts: ''
+
+      fail-fast: false
+
+    container:
+      image: ${{ matrix.container.image }}
+
+    steps:
+      - name: Detect OS release
+        run: |
+          . /etc/os-release
+          echo "OS_RELEASE_ID=$ID" >> $GITHUB_ENV
+          echo "OS_RELEASE_VERSION=$VERSION_ID" >> $GITHUB_ENV
+          echo "OS_RELEASE_VERSION_MAJOR=${VERSION_ID%%.*}" >> $GITHUB_ENV
+          echo "OS_RELEASE_VERSION_CODENAME=$VERSION_CODENAME" >> $GITHUB_ENV
+
+      - name: Debian OS obtain codename for prerelease vesions
+        run: echo "OS_RELEASE_VERSION_CODENAME=`dpkg --status tzdata | grep 'Provides' | cut -f2 -d'-'`" >> $GITHUB_ENV
+        if: env.OS_RELEASE_ID == 'debian' && env.OS_RELEASE_VERSION_CODENAME == ''
+
+      - name: OS update
+        run: ${{ matrix.container.update_cmd }}
+
+      - name: OS install ansible
+        run: ${{ matrix.container.install_ansible_cmd }}
+
+      - name: Checkout MythTV/ansible repository
+        uses: actions/checkout@v4
+        with:
+          repository: MythTV/ansible
+          path: ansible
+
+      - name: Run ansible to install build requirements
+        working-directory: ansible
+        run: ${{ matrix.container.ansible_cmd }}
+
+      - name: Install extra packages for additional coverage
+        run: ${{ matrix.container.install_extra_pkgs_cmd }} 
+        if: ${{ matrix.container.install_extra_pkgs_cmd != '' }
+
+      ####
+      #### This would be a local checkout if/when this moves to the MythTV repo
+      ####
+      - name: Checkout Mythtv/mythtv repository
+        uses: actions/checkout@v4
+        with:
+          repository: MythTV/mythtv
+          path: mythtv
+
+      - name: Configure
+        working-directory: mythtv
+        run: cmake --preset qt5 -DCMAKE_INSTALL_PREFIX=${{ env.MYTHTV_CONFIG_PREFIX }} ${{ matrix.container.cmake_opts }}
+
+      - name: Build
+        working-directory: mythtv
+        run: cmake --build build-qt5
