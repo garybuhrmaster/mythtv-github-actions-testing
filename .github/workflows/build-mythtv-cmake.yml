@@ -89,8 +89,8 @@ jobs:
         run: ${{ matrix.container.ansible_cmd }}
 
       - name: Install extra packages for additional coverage
-        run: ${{ matrix.container.install_extra_pkgs_cmd }} 
-        if: ${{ matrix.container.install_extra_pkgs_cmd != '' }
+        run: ${{ matrix.container.install_extra_pkgs_cmd }}
+        if: ${{ matrix.container.install_extra_pkgs_cmd != '' }}
 
       ####
       #### This would be a local checkout if/when this moves to the MythTV repo
