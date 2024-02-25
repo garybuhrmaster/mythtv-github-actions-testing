@@ -359,10 +359,10 @@ jobs:
     env:
       TZ: Etc/UTC
       MYTHTV_CONFIG_PREFIX: "${{ github.workspace }}/build/install"
-      MYTHTV_CONFIG_EXTRA: "--cc=${{ matrix.compiler.cc }} --cxx=${{ matrix.compiler.cxx }}"
+      MYTHTV_CONFIG_EXTRA: "--cc=${{ matrix.compiler.cc }} --cxx=${{ matrix.compiler.cxx }} --compile-type=release --enable-debug=0 --disable-debug"
       CCACHE_DIR: $HOME/.ccache
       CCACHE_COMPRESS: true
-      CCACHE_MAXSIZE: 900M
+      CCACHE_MAXSIZE: 250M
       ANSIBLE_CMD: "ansible-playbook-${{ matrix.os.python_dot_version }}"
       CONFIGURE_CMD: "./configure"
       MAKE_CMD: 'make -j4'
