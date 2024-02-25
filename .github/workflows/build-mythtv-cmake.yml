@@ -30,7 +30,7 @@ permissions:
 
 jobs:
   build-mythtv-linux-cmake:
-    name: Building MythTV on ${{ matrix.container.desc }} using cmake
+    name: Building MythTV on ${{ matrix.container.desc }}
 
     runs-on: ubuntu-latest
 
@@ -52,7 +52,13 @@ jobs:
             install_ansible_cmd: 'dnf install ansible dnf-plugins-core -y'
             ansible_cmd: 'ansible-playbook --limit localhost mythtv.yml'
             install_extra_pkgs_cmd: 'dnf install ant -y'
-            cmake_opts: ''
+            configure_cmd: 'cmake --preset qt5 -DCMAKE_INSTALL_PREFIX=${{ env.MYTHTV_CONFIG_PREFIX }}'
+            build_cmd: 'cmake --build build-qt5'
+            install_cmd: ''
+            test_cmd: ''
+            plugins_configure_cmd: ''
+            plugins_build_cmd: ''
+            plugins_install_cmd: ''
 
       fail-fast: false
 
@@ -74,9 +80,11 @@ jobs:
 
       - name: OS update
         run: ${{ matrix.container.update_cmd }}
+        if: ${{ matrix.container.update_cmd != '' }}
 
       - name: OS install ansible
         run: ${{ matrix.container.install_ansible_cmd }}
+        if: ${{ matrix.container.install_ansible_cmd != '' }}
 
       - name: Checkout MythTV/ansible repository
         uses: actions/checkout@v4
@@ -87,6 +95,7 @@ jobs:
       - name: Run ansible to install build requirements
         working-directory: ansible
         run: ${{ matrix.container.ansible_cmd }}
+        if: ${{ matrix.container.ansible_cmd != '' }}
 
       - name: Install extra packages for additional coverage
         run: ${{ matrix.container.install_extra_pkgs_cmd }}
@@ -103,8 +112,35 @@ jobs:
 
       - name: Configure
         working-directory: mythtv
-        run: cmake --preset qt5 -DCMAKE_INSTALL_PREFIX=${{ env.MYTHTV_CONFIG_PREFIX }} ${{ matrix.container.cmake_opts }}
+        run: ${{ matrix.container.configure_cmd }}
+        if: ${{ matrix.container.configure_cmd != '' }
 
       - name: Build
         working-directory: mythtv
-        run: cmake --build build-qt5
+        run: ${{ matrix.container.build_cmd }}
+        if: ${{ matrix.container.build_cmd != '' }}
+
+      - name: Install
+        working-directory: mythtv
+        run: ${{ matrix.container.install_cmd }}
+        if: ${{ matrix.container.install_cmd != '' }}
+
+      - name: Test
+        working-directory: mythtv
+        run: ${{ matrix.container.test_cmd }}
+        if: ${{ matrix.container.test_cmd != '' }}
+
+      - name: Configure Plugins
+        working-directory: mythtv
+        run: ${{ ${{ matrix.container.plugins_configure_cmd }}
+        if: ${{ matrix.container.plugins_configure_cmd != '' }}
+
+      - name: Build Plugins
+        working-directory: mythtv
+        run: ${{ ${{ matrix.container.plugins_build_cmd }}
+        if: ${{ matrix.container.plugins_build_cmd != '' }}
+
+      - name: Install Plugins
+        working-directory: mythtv
+        run: ${{ ${{ matrix.container.plugins_install_cmd }}
+        if: ${{ matrix.container.plugins_install_cmd != '' }}
