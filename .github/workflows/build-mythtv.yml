@@ -365,7 +365,7 @@ jobs:
       CCACHE_MAXSIZE: 250M
       ANSIBLE_CMD: "ansible-playbook-${{ matrix.os.python_dot_version }}"
       CONFIGURE_CMD: "./configure"
-      MAKE_CMD: 'make -j4'
+      MAKE_CMD: 'make'
       ANSIBLE_EXTRA: ''
 
     steps:
@@ -471,22 +471,7 @@ jobs:
 
       - name: Make core
         working-directory: mythtv/mythtv
-        run: ${MAKE_CMD} all_no_test
-
-      #
-      # Make install external & libs are a
-      # workaround for a dependency error
-      # in the Makefiles, as the macOS
-      # linker needs the libraries for
-      # further linking of the programs
-      #
-      # name: Install external libs
-      # working-directory: mythtv/mythtv
-      # run: ${MAKE_CMD} -C external install
-      #
-      # name: Install libs
-      # working-directory: mythtv/mythtv
-      # run: ${MAKE_CMD} -C libs install
+        run: ${MAKE_CMD} -j4 all_no_test
 
       - name: Install core
         working-directory: mythtv/mythtv
@@ -502,7 +487,7 @@ jobs:
 
       - name: Make plugins
         working-directory: mythtv/mythplugins
-        run: ${MAKE_CMD}
+        run: ${MAKE_CMD} -j4
 
       - name: Install plugins
         working-directory: mythtv/mythplugins
