@@ -257,6 +257,7 @@ jobs:
         with:
           repository: MythTV/mythtv
           path: mythtv
+          fetch-depth: 0
 
       - name: ccache statistics [pre]
         run: ccache -s
